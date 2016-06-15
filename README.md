@@ -1,5 +1,5 @@
 # Babel Root Import
-Babel plugin to add the opportunity to use `import` with root based paths.<br>
+Babel plugin to add the opportunity to use `import` and `require` with root based paths.<br>
 [![Build Status](https://travis-ci.org/michaelzoidl/babel-root-import.svg?branch=master)](https://travis-ci.org/michaelzoidl/babel-root-import)
 [![Codacy Badge](https://img.shields.io/codacy/98f77bcc84964e67a2754e563b962d27.svg)](https://www.codacy.com/app/me_1438/both-io)
 [![Dependency Status](https://david-dm.org/michaelzoidl/babel-root-import.svg)](https://david-dm.org/michaelzoidl/babel-root-import)
@@ -10,9 +10,11 @@ Babel plugin to add the opportunity to use `import` with root based paths.<br>
 ```javascript
 // Usually
 import SomeExample from '../../../some/example.js';
+const OtherExample = require('../../../other/example.js');
 
 // With Babel-Root-Importer
 import SomeExample from '~/some/example.js';
+const OtherExample = require('~/other/example.js');
 ```
 
 ## Install
@@ -61,6 +63,26 @@ If you don't like the `~` syntax you can just use your own symbole (for example 
 
 // Now you can use the plugin like:
 import foo from '@/my-file';
+```
+
+### Multiple custom prefixes and suffixes
+You can supply an array of the above. The plugin will try each prefix/suffix pair in the order they are defined.
+```javascript
+{
+  "plugins": [
+    ["babel-root-import", [{
+      "rootPathPrefix": "~", // `~` is the default so you can remove this if you want
+      "rootPathSuffix": "src/js"
+    }, {
+      "rootPathPrefix": "@",
+      "rootPathSuffix": "other-src/js"
+    }]]
+  ]
+}
+
+// Now you can use the plugin like:
+import foo from '~/my-file';
+const bar = require('@/my-file');
 ```
 
 ### Don't let ESLint be confused
