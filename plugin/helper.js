@@ -1,38 +1,33 @@
+import path from 'path';
 import slash from 'slash';
 
 const root = slash(global.rootPath || process.cwd());
 
-export const hasRootPathPrefixInString = (importPath, rootPathPrefix = '~') => {
-  let containsRootPathPrefix = false;
-
-  if (typeof importPath === 'string') {
-    if (importPath.substring(0, 1) === rootPathPrefix) {
-      containsRootPathPrefix = true;
-    }
-
-    const firstTwoCharactersOfString = importPath.substring(0, 2);
-    if (firstTwoCharactersOfString === `${rootPathPrefix}/`) {
-      containsRootPathPrefix = true;
-    }
-  }
-
-  return containsRootPathPrefix;
+export const pathPathPrefixTester = (rootPathPrefix) => {
+    // const s = rootPathPrefix.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    return new RegExp(`(${rootPathPrefix}){1}`, 'i');
 };
 
-export const transformRelativeToRootPath = (importPath, rootPathSuffix, rootPathPrefix) => {
-  let withoutRootPathPrefix = '';
-  if (hasRootPathPrefixInString(importPath, rootPathPrefix)) {
-    if (importPath.substring(0, 1) === '/') {
-      withoutRootPathPrefix = importPath.substring(1, importPath.length);
-    } else {
-      withoutRootPathPrefix = importPath.substring(2, importPath.length);
+export const hasRootPathPrefixInString = (importPath, importPathRegex) => {
+    if (typeof importPath === 'string') {
+        return importPathRegex.test(importPath);
     }
-    return slash(`${root}${rootPathSuffix ? rootPathSuffix : ''}/${withoutRootPathPrefix}`);
-  }
 
-  if (typeof importPath === 'string') {
-    return importPath;
-  }
+    return false;
+};
 
-  throw new Error('ERROR: No path passed');
+export const transformRelativeToRootPath = (importPath, rootPathSuffix = '', rootPathPrefix = '~') => {
+    const importPathRegex = pathPathPrefixTester(rootPathPrefix);
+
+    if (hasRootPathPrefixInString(importPath, importPathRegex)) {
+        let normalizedPath = importPath.replace(importPathRegex, rootPathSuffix);
+        normalizedPath = path.join(root, normalizedPath);
+        return normalizedPath;
+    }
+
+    if (typeof importPath === 'string') {
+        return importPath;
+    }
+
+    throw new Error('ERROR: No path passed');
 };

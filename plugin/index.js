@@ -1,29 +1,33 @@
-import {hasRootPathPrefixInString, transformRelativeToRootPath} from './helper';
+import {
+    pathPathPrefixTester,
+    hasRootPathPrefixInString,
+    transformRelativeToRootPath
+} from './helper';
 
 const replacePrefix = (path, opts = []) => {
-  const options = [].concat(opts);
+    const options = [].concat(opts);
 
-  for (let i = 0; i < options.length; i++) {
-    let rootPathSuffix = '';
-    let rootPathPrefix = '';
-    const option = options[i];
+    for (let i = 0; i < options.length; i++) {
+        let rootPathSuffix = '';
+        let rootPathPrefix = '';
+        const option = options[i];
 
-    if (option.rootPathSuffix && typeof option.rootPathSuffix === 'string') {
-      rootPathSuffix = `/${option.rootPathSuffix.replace(/^(\/)|(\/)$/g, '')}`;
+        if (option.rootPathSuffix && typeof option.rootPathSuffix === 'string') {
+            rootPathSuffix = `/${option.rootPathSuffix.replace(/^(\/)|(\/)$/g, '')}`;
+        }
+
+        if (option.rootPathPrefix && typeof option.rootPathPrefix === 'string') {
+            rootPathPrefix = option.rootPathPrefix;
+        } else {
+            rootPathPrefix = '~';
+        }
+
+        if (hasRootPathPrefixInString(path, pathPathPrefixTester(rootPathPrefix))) {
+            return transformRelativeToRootPath(path, rootPathSuffix, rootPathPrefix);
+        }
     }
 
-    if (option.rootPathPrefix && typeof option.rootPathPrefix === 'string') {
-      rootPathPrefix = option.rootPathPrefix;
-    } else {
-      rootPathPrefix = '~';
-    }
-
-    if (hasRootPathPrefixInString(path, rootPathPrefix)) {
-      return transformRelativeToRootPath(path, rootPathSuffix, rootPathPrefix);
-    }
-  }
-
-  return path;
+    return path;
 };
 
 /**
@@ -33,37 +37,39 @@ const replacePrefix = (path, opts = []) => {
  * @return {StringLiteral?}
  */
 const traverseExpression = (t, arg) => {
-  if (t.isStringLiteral(arg)) {
-    return arg;
-  }
+    if (t.isStringLiteral(arg)) {
+        return arg;
+    }
 
-  if (t.isBinaryExpression(arg)) {
-    return traverseExpression(t, arg.left);
-  }
+    if (t.isBinaryExpression(arg)) {
+        return traverseExpression(t, arg.left);
+    }
 
-  return null;
+    return null;
 };
 
-export default ({'types': t}) => ({
-  'visitor': {
-    CallExpression(path, state) {
-      if (path.node.callee.name !== 'require') {
-        return;
-      }
+export default ({
+    'types': t
+}) => ({
+    'visitor': {
+        CallExpression(path, state) {
+            if (path.node.callee.name !== 'require') {
+                return;
+            }
 
-      const args = path.node.arguments;
-      if (!args.length) {
-        return;
-      }
+            const args = path.node.arguments;
+            if (!args.length) {
+                return;
+            }
 
-      const firstArg = traverseExpression(t, args[0]);
+            const firstArg = traverseExpression(t, args[0]);
 
-      if (firstArg) {
-        firstArg.value = replacePrefix(firstArg.value, state.opts);
-      }
-    },
-    ImportDeclaration(path, state) {
-      path.node.source.value = replacePrefix(path.node.source.value, state.opts);
+            if (firstArg) {
+                firstArg.value = replacePrefix(firstArg.value, state.opts);
+            }
+        },
+        ImportDeclaration(path, state) {
+            path.node.source.value = replacePrefix(path.node.source.value, state.opts);
+        }
     }
-  }
 });
