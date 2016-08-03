@@ -206,6 +206,33 @@ describe('Babel Root Import - Plugin', () => {
         expect(transformedRequire.code).to.contain(targetRequire);
     });
 
+    it('uses a custom prefix "html!@"" to detect a root-import path and has a custom rootPathSuffix', () => {
+        const targetRequire = slash(`${process.cwd()}/some/example.js`);
+        const transformedImport = babel.transform("import SomeExample from 'html!@/example.js';", {
+            'plugins': [
+                [
+                    BabelRootImportPlugin, {
+                        'rootPathPrefix': 'html!@',
+                        'rootPathSuffix': 'some'
+                    }
+                ]
+            ]
+        });
+        const transformedRequire = babel.transform("var SomeExample = require('html!@/example.js');", {
+            'plugins': [
+                [
+                    BabelRootImportPlugin, {
+                        'rootPathPrefix': 'html!@',
+                        'rootPathSuffix': 'some'
+                    }
+                ]
+            ]
+        });
+
+        expect(transformedImport.code).to.contain(targetRequire);
+        expect(transformedRequire.code).to.contain(targetRequire);
+    });
+
     it('transforms a multipart require path with string at the beginning', () => {
         const targetRequire1 = slash(`${process.cwd()}/some/' + 'example.js`);
         const transformedRequire1 = babel.transform("var SomeExample = require('~/some/' + 'example.js');", {
